@@ -58,32 +58,11 @@ export interface ObservedTemplateVariable {
   sample?: string;
 }
 
-export type ChangeRequestEffect = 'add' | 'remove' | 'rename' | 'retype' | 'flip-required';
-export type ChangeRequestStatus = 'open' | 'accepted' | 'rejected' | 'expired';
-export type ChangeRequestProposer = 'developer' | 'marketer' | 'genius';
-export type ChangeRequestDecision = 'accept' | 'accept-as-optional' | 'reject';
-
-export interface TemplateChangeProposal {
-  id: string;
-  effect: ChangeRequestEffect;
-  proposer: ChangeRequestProposer;
-  proposerUid?: string;
-  proposerDisplayName?: string;
-  variable: TemplateVariable;
-  fromVariable?: TemplateVariable;
-  notes?: string;
-  proposedAt: string;
-  acknowledgedAt?: string;
-  acknowledgedBy?: string;
-  acknowledgedDecision?: ChangeRequestDecision;
-  expiresAt: string;
-  status: ChangeRequestStatus;
-}
-
 export interface TemplateSchemaContract {
   declared: TemplateVariable[];
   observed: ObservedTemplateVariable[];
-  pending: TemplateChangeProposal[];
+  /** Reserved for future use. Treat as opaque. */
+  pending?: unknown[];
   policy?: { mode: 'strict' | 'lenient'; failOnUndeclared: boolean };
   ratifiedAt: string;
   ratifiedVersion: number;

@@ -5,7 +5,6 @@
  *
  *   mg.workspace.get()
  *   mg.templates.{list, get, render, send, schema}
- *   mg.templates.changeRequests.{list, create, ack}
  *   mg.sequences.{list, get, runs, enroll}
  *   mg.sequences.runs.{get, cancel}
  *   mg.events.emit()
@@ -26,8 +25,6 @@ import type {
   AuditEvent,
   BrandDetail,
   BrandSummary,
-  ChangeRequestDecision,
-  ChangeRequestEffect,
   CreateWebhookRequest,
   EmitEventRequest,
   EmitEventResponse,
@@ -40,11 +37,9 @@ import type {
   Sequence,
   SequenceDetail,
   SequenceRun,
-  TemplateChangeProposal,
   TemplateDetail,
   TemplateSchemaContract,
   TemplateSummary,
-  TemplateVariable,
   UpdateWebhookRequest,
   WebhookSubscription,
   Workspace,
@@ -109,10 +104,7 @@ class WorkspaceResource {
 }
 
 class TemplatesResource {
-  readonly changeRequests: ChangeRequestsResource;
-  constructor(private readonly t: Transport) {
-    this.changeRequests = new ChangeRequestsResource(t);
-  }
+  constructor(private readonly t: Transport) {}
 
   list(): Promise<TemplateSummary[]> {
     return this.t
@@ -122,9 +114,9 @@ class TemplatesResource {
 
   /**
    * Async iterator over every template in the workspace. The REST
-   * endpoint does not paginate today (PRD §10.1 — workspaces have
-   * O(100) templates), but we expose the iterator now so SDK users
-   * don't have to migrate when cursors land in Phase 2.
+   * endpoint does not paginate today (workspaces have O(100) templates),
+   * but we expose the iterator now so SDK users don't have to migrate
+   * when cursors land.
    */
   async *iter(): AsyncIterableIterator<TemplateSummary> {
     const items = await this.list();
@@ -163,53 +155,6 @@ class TemplatesResource {
     return this.t.request({
       method: 'GET',
       path: `/v1/templates/${encodeURIComponent(key)}/schema`,
-    });
-  }
-}
-
-class ChangeRequestsResource {
-  constructor(private readonly t: Transport) {}
-
-  list(templateKey: string): Promise<TemplateChangeProposal[]> {
-    return this.t
-      .request<{ data: TemplateChangeProposal[] }>({
-        method: 'GET',
-        path: `/v1/templates/${encodeURIComponent(templateKey)}/change-requests`,
-      })
-      .then((r) => r.data);
-  }
-
-  create(
-    templateKey: string,
-    body: {
-      effect: ChangeRequestEffect;
-      variable: TemplateVariable;
-      fromVariable?: TemplateVariable;
-      notes?: string;
-    },
-  ): Promise<{ templateKey: string; proposal: TemplateChangeProposal }> {
-    return this.t.request({
-      method: 'POST',
-      path: `/v1/templates/${encodeURIComponent(templateKey)}/change-requests`,
-      body,
-    });
-  }
-
-  ack(
-    templateKey: string,
-    changeRequestId: string,
-    body: {
-      decision: ChangeRequestDecision;
-      defaultValue?: string;
-      notes?: string;
-    },
-  ): Promise<{ changeRequestId: string; status: string; promotedVariable?: TemplateVariable }> {
-    return this.t.request({
-      method: 'POST',
-      path: `/v1/templates/${encodeURIComponent(templateKey)}/change-requests/${encodeURIComponent(
-        changeRequestId,
-      )}/ack`,
-      body,
     });
   }
 }

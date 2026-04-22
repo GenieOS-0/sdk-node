@@ -74,15 +74,19 @@ try {
 
 ## Schema contract
 
-The asymmetric workflow described in [Plans/Developers/Developers-PRD.md §5][prd] is
-exposed as first-class operations on `mg.templates.changeRequests`:
+Every template carries a typed schema contract. The SDK's send and
+render paths surface schema validation errors as
+`MailGeniusValidationError` with field-level codes:
 
 ```ts
-const proposal = await mg.templates.changeRequests.create('order.confirmation', {
-  effect: 'add',
-  variable: { key: 'discount', type: 'string', sample: '10%', required: false },
-  notes: 'Discounts now appear on receipts',
-});
+try {
+  await mg.templates.send('order.confirmation', { to, variables });
+} catch (err) {
+  if (err instanceof MailGeniusValidationError) {
+    for (const f of err.fields ?? []) console.warn(f.path, f.code);
+  }
+}
 ```
 
-[prd]: https://github.com/mail-genius/mailgenius/blob/main/Plans/Developers/Developers-PRD.md
+Codegen that turns a published contract into typed `variables` inputs
+is tracked on the roadmap — see the [docs](https://docs.mailgenius.app/schema-contract).
