@@ -1,6 +1,6 @@
 /**
  * Wire types for the MailGenius public API. These are hand-curated to
- * mirror the shapes returned by `https://api.mailgenius.app/v1/*` and
+ * mirror the shapes returned by `https://api.mailgenius.pro/v1/*` and
  * intentionally do NOT pull from `@shared/types/*` so this package can
  * be published independently of the monorepo.
  *

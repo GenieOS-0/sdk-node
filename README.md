@@ -1,6 +1,6 @@
 # @mailgenius/sdk
 
-Official TypeScript / Node.js SDK for the [MailGenius](https://mailgenius.app) API.
+Official TypeScript / Node.js SDK for the [MailGenius](https://mailgenius.pro) API.
 
 ```bash
 npm add @mailgenius/sdk
@@ -89,4 +89,4 @@ try {
 ```
 
 Codegen that turns a published contract into typed `variables` inputs
-is tracked on the roadmap — see the [docs](https://docs.mailgenius.app/schema-contract).
+is tracked on the roadmap — see the [docs](https://docs.mailgenius.pro/schema-contract).

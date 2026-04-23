@@ -33,7 +33,7 @@ export interface TransportOptions {
    * the legacy `mfk_live_*` shape. Treated opaquely.
    */
   apiKey: string;
-  /** Defaults to `https://api.mailgenius.app`. */
+  /** Defaults to `https://api.mailgenius.pro`. */
   baseUrl?: string;
   /** Per-request timeout, default 30s. */
   timeoutMs?: number;
@@ -69,7 +69,7 @@ export interface RequestOptions {
 }
 
 const SDK_VERSION = '0.1.0';
-const DEFAULT_BASE = 'https://api.mailgenius.app';
+const DEFAULT_BASE = 'https://api.mailgenius.pro';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 export class Transport {
