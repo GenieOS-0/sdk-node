@@ -1,16 +1,16 @@
-# @mailgenius/sdk
+# mailgenius
 
 Official TypeScript / Node.js SDK for the [MailGenius](https://mailgenius.pro) API.
 
 ```bash
-npm add @mailgenius/sdk
-# or: pnpm add @mailgenius/sdk · yarn add @mailgenius/sdk
+npm add mailgenius
+# or: pnpm add mailgenius · yarn add mailgenius
 ```
 
 ## Quickstart
 
 ```ts
-import { MailGenius } from '@mailgenius/sdk';
+import { MailGenius } from 'mailgenius';
 
 const mg = new MailGenius({ apiKey: process.env.MG_API_KEY! });
 
@@ -36,7 +36,7 @@ window on the server (24h, per workspace per key) works out-of-the-box.
 
 ```ts
 import express from 'express';
-import { verifyWebhook } from '@mailgenius/sdk/webhooks';
+import { verifyWebhook } from 'mailgenius/webhooks';
 
 const app = express();
 
@@ -61,7 +61,7 @@ app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) =>
 ## Error handling
 
 ```ts
-import { MailGeniusRateLimitError, MailGeniusValidationError } from '@mailgenius/sdk';
+import { MailGeniusRateLimitError, MailGeniusValidationError } from 'mailgenius';
 
 try {
   await mg.templates.send('order.confirmation', { to: 'invalid' });

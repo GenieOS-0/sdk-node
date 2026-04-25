@@ -9,7 +9,7 @@
  * Usage (Express):
  *
  *   import express from 'express';
- *   import { verifyWebhook } from '@mailgenius/sdk/webhooks';
+ *   import { verifyWebhook } from 'mailgenius/webhooks';
  *
  *   app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) => {
  *     try {

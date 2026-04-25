@@ -1,5 +1,5 @@
 {
-  "name": "@mailgenius/sdk",
+  "name": "mailgenius",
   "version": "0.1.0",
   "description": "Official TypeScript / Node.js SDK for the MailGenius API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
   "license": "Apache-2.0",
