@@ -1,18 +1,18 @@
-# mailgenius
+# genieos
 
-Official TypeScript / Node.js SDK for the [MailGenius](https://mailgenius.pro) API.
+Official TypeScript / Node.js SDK for the [GenieOS](https://genieos.pro) API.
 
 ```bash
-npm add mailgenius
-# or: pnpm add mailgenius · yarn add mailgenius
+npm add genieos
+# or: pnpm add genieos · yarn add genieos
 ```
 
 ## Quickstart
 
 ```ts
-import { MailGenius } from 'mailgenius';
+import { GenieOS } from 'genieos';
 
-const mg = new MailGenius({ apiKey: process.env.MG_API_KEY! });
+const mg = new GenieOS({ apiKey: process.env.MG_API_KEY! });
 
 await mg.templates.send('order.confirmation', {
   to: 'fan@example.com',
@@ -36,7 +36,7 @@ window on the server (24h, per workspace per key) works out-of-the-box.
 
 ```ts
 import express from 'express';
-import { verifyWebhook } from 'mailgenius/webhooks';
+import { verifyWebhook } from 'genieos/webhooks';
 
 const app = express();
 
@@ -61,7 +61,7 @@ app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) =>
 ## Error handling
 
 ```ts
-import { MailGeniusRateLimitError, MailGeniusValidationError } from 'mailgenius';
+import { MailGeniusRateLimitError, MailGeniusValidationError } from 'genieos';
 
 try {
   await mg.templates.send('order.confirmation', { to: 'invalid' });
@@ -89,4 +89,4 @@ try {
 ```
 
 Codegen that turns a published contract into typed `variables` inputs
-is tracked on the roadmap — see the [docs](https://docs.mailgenius.pro/schema-contract).
+is tracked on the roadmap — see the [docs](https://docs.genieos.pro/schema-contract).

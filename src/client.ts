@@ -1,5 +1,5 @@
 /**
- * High-level MailGenius client.
+ * High-level GenieOS client.
  *
  * Surface organised by resource:
  *
@@ -54,7 +54,7 @@ interface ListEnvelope<T> {
   cursor?: string | null;
 }
 
-export class MailGenius {
+export class GenieOS {
   private readonly transport: Transport;
   readonly workspace: WorkspaceResource;
   readonly templates: TemplatesResource;

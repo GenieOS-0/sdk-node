@@ -9,7 +9,7 @@
  * Usage (Express):
  *
  *   import express from 'express';
- *   import { verifyWebhook } from 'mailgenius/webhooks';
+ *   import { verifyWebhook } from 'genieos/webhooks';
  *
  *   app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) => {
  *     try {
@@ -51,7 +51,7 @@ export interface VerifyOptions {
 }
 
 /**
- * Verify an inbound MailGenius webhook delivery and return the parsed
+ * Verify an inbound GenieOS webhook delivery and return the parsed
  * envelope. Throws `WebhookVerificationError` on any failure mode.
  *
  * `headers` may be the raw header bag from any framework (Express,

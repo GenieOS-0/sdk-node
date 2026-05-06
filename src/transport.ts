@@ -1,5 +1,5 @@
 /**
- * Low-level HTTP transport for the MailGenius SDK.
+ * Low-level HTTP transport for the GenieOS SDK.
  *
  * Responsibilities:
  *
@@ -33,7 +33,7 @@ export interface TransportOptions {
    * the legacy `mfk_live_*` shape. Treated opaquely.
    */
   apiKey: string;
-  /** Defaults to `https://api.mailgenius.pro`. */
+  /** Defaults to `https://api.genieos.pro`. */
   baseUrl?: string;
   /** Per-request timeout, default 30s. */
   timeoutMs?: number;
@@ -69,7 +69,7 @@ export interface RequestOptions {
 }
 
 const SDK_VERSION = '0.1.0';
-const DEFAULT_BASE = 'https://api.mailgenius.pro';
+const DEFAULT_BASE = 'https://api.genieos.pro';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 export class Transport {
@@ -83,7 +83,7 @@ export class Transport {
   private readonly userAgent: string;
 
   constructor(opts: TransportOptions) {
-    if (!opts.apiKey) throw new Error('MailGenius SDK: apiKey is required.');
+    if (!opts.apiKey) throw new Error('GenieOS SDK: apiKey is required.');
     this.apiKey = opts.apiKey;
     this.baseUrl = (opts.baseUrl ?? DEFAULT_BASE).replace(/\/$/, '');
     this.timeoutMs = opts.timeoutMs ?? 30_000;
@@ -161,7 +161,7 @@ export class Transport {
       }
     }
     // Defensive — shouldn't be reachable.
-    throw lastError ?? new Error('MailGenius SDK: exhausted retries with no captured error');
+    throw lastError ?? new Error('GenieOS SDK: exhausted retries with no captured error');
   }
 
   private buildUrl(path: string, query?: RequestOptions['query']): string {

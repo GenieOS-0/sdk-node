@@ -1,5 +1,5 @@
 /**
- * Typed errors for `mailgenius`.
+ * Typed errors for `genieos`.
  *
  * Mirrors the error envelope returned by the REST API (Plans/Developers/
  * Developers-PRD.md §13.2):

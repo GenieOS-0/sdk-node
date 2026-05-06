@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MailGenius, MailGeniusAuthError, MailGeniusRateLimitError } from '../src/index.js';
+import { GenieOS, MailGeniusAuthError, MailGeniusRateLimitError } from '../src/index.js';
 
 function fakeFetch(handler: (req: Request) => Response | Promise<Response>): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -11,7 +11,7 @@ function fakeFetch(handler: (req: Request) => Response | Promise<Response>): typ
 
 test('templates.send injects bearer auth + idempotency-key + body', async () => {
   let observed: { authorization: string | null; idempotency: string | null; body: string } | null = null;
-  const mg = new MailGenius({
+  const mg = new GenieOS({
     apiKey: 'mg_live_unit_test',
     fetch: fakeFetch(async (req) => {
       observed = {
@@ -39,7 +39,7 @@ test('templates.send injects bearer auth + idempotency-key + body', async () => 
 
 test('429 with retry-after backs off then succeeds', async () => {
   let calls = 0;
-  const mg = new MailGenius({
+  const mg = new GenieOS({
     apiKey: 'mg_live_unit',
     initialBackoffMs: 5,
     fetch: fakeFetch(async () => {
@@ -62,7 +62,7 @@ test('429 with retry-after backs off then succeeds', async () => {
 });
 
 test('401 throws MailGeniusAuthError', async () => {
-  const mg = new MailGenius({
+  const mg = new GenieOS({
     apiKey: 'mg_live_invalid',
     maxRetries: 0,
     fetch: fakeFetch(
@@ -77,7 +77,7 @@ test('401 throws MailGeniusAuthError', async () => {
 });
 
 test('429 with exhausted retries throws MailGeniusRateLimitError', async () => {
-  const mg = new MailGenius({
+  const mg = new GenieOS({
     apiKey: 'mg_live_x',
     maxRetries: 1,
     initialBackoffMs: 1,

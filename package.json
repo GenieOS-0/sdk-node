@@ -1,18 +1,18 @@
 {
-  "name": "mailgenius",
+  "name": "genieos",
   "version": "0.1.0",
-  "description": "Official TypeScript / Node.js SDK for the MailGenius API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
+  "description": "Official TypeScript / Node.js SDK for the GenieOS API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
   "license": "Apache-2.0",
-  "homepage": "https://docs.mailgenius.pro/sdks/node",
+  "homepage": "https://docs.genieos.pro/sdks/node",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mail-genius/sdk-node.git"
+    "url": "git+https://github.com/mail-genie/sdk-node.git"
   },
   "bugs": {
-    "url": "https://github.com/mail-genius/sdk-node/issues"
+    "url": "https://github.com/mail-genie/sdk-node/issues"
   },
   "keywords": [
-    "mailgenius",
+    "genieos",
     "email",
     "transactional",
     "marketing",
