@@ -1,6 +1,6 @@
 {
   "name": "@genie-os/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official TypeScript / Node.js SDK for the GenieOS API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
   "license": "Apache-2.0",
   "homepage": "https://docs.genieos.pro/sdks/node",
@@ -22,17 +22,17 @@
   ],
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./webhooks": {
       "types": "./dist/webhooks.d.ts",
-      "import": "./dist/webhooks.mjs",
+      "import": "./dist/webhooks.js",
       "require": "./dist/webhooks.cjs"
     }
   },
