@@ -3,16 +3,26 @@
  *
  * Surface organised by resource:
  *
- *   mg.workspace.get()
- *   mg.templates.{list, get, render, send, schema}
- *   mg.sequences.{list, get, runs, enroll}
- *   mg.sequences.runs.{get, cancel}
- *   mg.events.emit()
- *   mg.webhooks.{list, get, create, update, delete}
- *   mg.keys.{list, get}
- *   mg.audit.list()
- *   mg.brand.{list, get}
- *   mg.connectors.{catalog, list}
+ *   gos.workspace.get()
+ *   gos.templates.{list, get, create, compose, render, send, schema}
+ *   gos.sequences.{list, get, runs, enroll}
+ *   gos.sequences.runs.{get, cancel}
+ *   gos.events.emit()
+ *   gos.webhooks.{list, get, create, update, delete}
+ *   gos.keys.{list, get}
+ *   gos.audit.list()
+ *   gos.brand.{list, get}
+ *   gos.pages.{list, get}
+ *   gos.connectors.{catalog, list}
+ *   gos.messaging.{kit, catalog, preview, send, listDeliveries}
+ *   gos.social.transactional.{catalog, listTemplates, preview, trigger, listEvents}
+ *   gos.social.{listNetworks, refreshNetworks, list, get, create, update, schedule, publish, delete, analytics}
+ *   gos.marketing.{strategy, patchStrategy, listIcps, getIcp, creationDefaults, setCreationDefaults}
+ *   gos.creations.{list, get, spawn, approveStrategy}
+ *   gos.lists.{list, get, create, update, delete, addMembers, removeMembers}
+ *   gos.approvals.{listPolicies, listPending, managePolicy, decide}
+ *   gos.links.create()
+ *   gos.pages.{list, get, compose, publish, unpublish}
  *
  * The client itself is a thin façade over `Transport`. All retries,
  * idempotency-key generation, error shaping, and timeouts live in
@@ -25,6 +35,8 @@ import type {
   AuditEvent,
   BrandDetail,
   BrandSummary,
+  CreateSocialPostRequest,
+  CreateSocialPostResponse,
   CreateWebhookRequest,
   EmitEventRequest,
   EmitEventResponse,
@@ -32,16 +44,33 @@ import type {
   EnrollSequenceResponse,
   PageDetail,
   PageSummary,
+  PreviewSmsRequest,
+  PreviewSmsResponse,
+  PreviewSocialEventRequest,
+  PublishSocialPostRequest,
   RenderTemplateRequest,
   RenderTemplateResponse,
+  ScheduleSocialPostRequest,
+  SendSmsRequest,
+  SendSmsResponse,
   SendTemplateRequest,
   SendTemplateResponse,
   Sequence,
   SequenceDetail,
   SequenceRun,
+  SmsCatalogEntry,
+  SmsDelivery,
+  SmsTemplateView,
+  SocialChannelId,
+  SocialNetwork,
+  SocialPost,
+  SocialPostStatus,
   TemplateDetail,
   TemplateSchemaContract,
   TemplateSummary,
+  TriggerSocialEventRequest,
+  TriggerSocialEventResponse,
+  UpdateSocialPostRequest,
   UpdateWebhookRequest,
   WebhookSubscription,
   Workspace,
@@ -68,6 +97,17 @@ export class GenieOS {
   readonly brand: BrandResource;
   readonly pages: PagesResource;
   readonly connectors: ConnectorsResource;
+  /** Transactional SMS — `/v1/messaging/transactional/*`. */
+  readonly messaging: MessagingResource;
+  /** Alias of `messaging` for callers who think in SMS. */
+  readonly sms: MessagingResource;
+  /** Organic + transactional social. */
+  readonly social: SocialResource;
+  readonly marketing: MarketingResource;
+  readonly creations: CreationsResource;
+  readonly lists: ListsResource;
+  readonly approvals: ApprovalsResource;
+  readonly links: LinksResource;
   /** Alias of `sequences` for callers raised on the legacy "flows" name. */
   readonly flows: SequencesResource;
 
@@ -84,6 +124,14 @@ export class GenieOS {
     this.brand = new BrandResource(this.transport);
     this.pages = new PagesResource(this.transport);
     this.connectors = new ConnectorsResource(this.transport);
+    this.messaging = new MessagingResource(this.transport);
+    this.sms = this.messaging;
+    this.social = new SocialResource(this.transport);
+    this.marketing = new MarketingResource(this.transport);
+    this.creations = new CreationsResource(this.transport);
+    this.lists = new ListsResource(this.transport);
+    this.approvals = new ApprovalsResource(this.transport);
+    this.links = new LinksResource(this.transport);
   }
 
   /**
@@ -130,6 +178,35 @@ class PagesResource {
       path: `/v1/pages/${encodeURIComponent(idOrSlug)}`,
     });
   }
+
+  compose(
+    idOrSlug: string,
+    body: { intake: Record<string, unknown>; persist?: boolean; themeId?: string },
+  ): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/pages/${encodeURIComponent(idOrSlug)}/compose`,
+      body,
+    });
+  }
+
+  publish(idOrSlug: string, body: { slug?: string } = {}): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'POST',
+        path: `/v1/pages/${encodeURIComponent(idOrSlug)}/publish`,
+        body,
+      })
+      .then((r) => r.data);
+  }
+
+  unpublish(idOrSlug: string): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/pages/${encodeURIComponent(idOrSlug)}/unpublish`,
+      body: {},
+    });
+  }
 }
 
 class TemplatesResource {
@@ -157,6 +234,38 @@ class TemplatesResource {
       method: 'GET',
       path: `/v1/templates/${encodeURIComponent(key)}`,
     });
+  }
+
+  /** Create a blank draft email template. */
+  create(body: {
+    key?: string;
+    name?: string;
+    category?: 'marketing' | 'transactional' | 'system';
+    mode?: 'mjml' | 'html';
+    subject?: string;
+    previewText?: string;
+    themeId?: string;
+  } = {}): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({ method: 'POST', path: '/v1/templates', body })
+      .then((r) => r.data);
+  }
+
+  /** Compose from a brief and persist. Charges compose-template credits. */
+  compose(body: {
+    prompt: string;
+    key?: string;
+    name?: string;
+    category?: 'marketing' | 'transactional' | 'system';
+    mode?: 'mjml' | 'html';
+    themeId?: string;
+    starterShellId?: string;
+    includeHeroImage?: boolean;
+    model?: string;
+  }): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({ method: 'POST', path: '/v1/templates/compose', body })
+      .then((r) => r.data);
   }
 
   render(key: string, body: RenderTemplateRequest = {}): Promise<RenderTemplateResponse> {
@@ -360,5 +469,456 @@ class ConnectorsResource {
 
   list(): Promise<{ connectors: unknown[] }> {
     return this.t.request({ method: 'GET', path: '/v1/connectors' });
+  }
+}
+
+class MessagingResource {
+  constructor(private readonly t: Transport) {}
+
+  /** GET /v1/messaging/transactional/kit — workspace SMS template views. */
+  kit(): Promise<SmsTemplateView[]> {
+    return this.t
+      .request<ListEnvelope<SmsTemplateView>>({
+        method: 'GET',
+        path: '/v1/messaging/transactional/kit',
+      })
+      .then((r) => r.data);
+  }
+
+  /** GET /v1/messaging/transactional/catalog — platform SMS definitions. */
+  catalog(): Promise<SmsCatalogEntry[]> {
+    return this.t
+      .request<ListEnvelope<SmsCatalogEntry>>({
+        method: 'GET',
+        path: '/v1/messaging/transactional/catalog',
+      })
+      .then((r) => r.data);
+  }
+
+  preview(body: PreviewSmsRequest): Promise<PreviewSmsResponse> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/messaging/transactional/preview',
+      body,
+    });
+  }
+
+  send(
+    body: SendSmsRequest,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<SendSmsResponse> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/messaging/transactional',
+      body,
+      idempotencyKey: opts.idempotencyKey ?? body.idempotencyKey,
+    });
+  }
+
+  listDeliveries(opts: { templateKey?: string; limit?: number } = {}): Promise<SmsDelivery[]> {
+    return this.t
+      .request<{ data?: SmsDelivery[] } | SmsDelivery[]>({
+        method: 'GET',
+        path: '/v1/messaging/transactional/deliveries',
+        query: { templateKey: opts.templateKey, limit: opts.limit },
+      })
+      .then((r) => (Array.isArray(r) ? r : (r.data ?? [])));
+  }
+}
+
+class SocialResource {
+  readonly transactional: TransactionalSocialResource;
+  constructor(private readonly t: Transport) {
+    this.transactional = new TransactionalSocialResource(t);
+  }
+
+  /** Company-only connected networks (`{ profileStatus, networks }`). */
+  listNetworks(): Promise<{ profileStatus: string; networks: SocialNetwork[] }> {
+    return this.t.request({
+      method: 'GET',
+      path: '/v1/social/networks',
+    });
+  }
+
+  refreshNetworks(): Promise<unknown> {
+    return this.t.request({ method: 'POST', path: '/v1/social/networks/refresh' });
+  }
+
+  list(opts: {
+    status?: SocialPostStatus;
+    channelId?: SocialChannelId;
+    groupId?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+  } = {}): Promise<SocialPost[]> {
+    return this.t
+      .request<{ data?: SocialPost[] } | SocialPost[]>({
+        method: 'GET',
+        path: '/v1/social/posts',
+        query: {
+          status: opts.status,
+          channelId: opts.channelId,
+          groupId: opts.groupId,
+          from: opts.from,
+          to: opts.to,
+          limit: opts.limit,
+        },
+      })
+      .then((r) => (Array.isArray(r) ? r : (r.data ?? [])));
+  }
+
+  get(postId: string): Promise<SocialPost> {
+    return this.t
+      .request<{ data: SocialPost }>({
+        method: 'GET',
+        path: `/v1/social/posts/${encodeURIComponent(postId)}`,
+      })
+      .then((r) => r.data);
+  }
+
+  create(
+    body: CreateSocialPostRequest,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<CreateSocialPostResponse> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/social/posts',
+      body,
+      idempotencyKey: opts.idempotencyKey ?? body.idempotencyKey,
+    });
+  }
+
+  update(postId: string, body: UpdateSocialPostRequest): Promise<SocialPost> {
+    return this.t
+      .request<{ data: SocialPost }>({
+        method: 'PATCH',
+        path: `/v1/social/posts/${encodeURIComponent(postId)}`,
+        body,
+      })
+      .then((r) => r.data);
+  }
+
+  schedule(
+    postId: string,
+    body: ScheduleSocialPostRequest,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/social/posts/${encodeURIComponent(postId)}/schedule`,
+      body,
+      idempotencyKey: opts.idempotencyKey,
+    });
+  }
+
+  publish(
+    postId: string,
+    body: PublishSocialPostRequest = {},
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/social/posts/${encodeURIComponent(postId)}/publish`,
+      body,
+      idempotencyKey: opts.idempotencyKey,
+    });
+  }
+
+  delete(postId: string, opts: { fromProvider?: boolean } = {}): Promise<unknown> {
+    return this.t.request({
+      method: 'DELETE',
+      path: `/v1/social/posts/${encodeURIComponent(postId)}`,
+      query: opts.fromProvider ? { fromProvider: 'true' } : undefined,
+    });
+  }
+
+  analytics(postId: string, opts: { refresh?: boolean } = {}): Promise<unknown> {
+    return this.t.request({
+      method: 'GET',
+      path: `/v1/social/posts/${encodeURIComponent(postId)}/analytics`,
+      query: opts.refresh ? { refresh: 'true' } : undefined,
+    });
+  }
+}
+
+class MarketingResource {
+  constructor(private readonly t: Transport) {}
+
+  strategy(opts: { detail?: 'summary' | 'full' } = {}): Promise<unknown> {
+    return this.t.request({
+      method: 'GET',
+      path: '/v1/marketing/strategy',
+      query: opts.detail === 'full' ? { detail: 'full' } : undefined,
+    });
+  }
+
+  listIcps(opts: { detail?: 'summary' | 'full' } = {}): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/marketing/icps',
+        query: opts.detail === 'full' ? { detail: 'full' } : undefined,
+      })
+      .then((r) => r.data);
+  }
+
+  getIcp(icpId: string): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'GET',
+        path: `/v1/marketing/icps/${encodeURIComponent(icpId)}`,
+      })
+      .then((r) => r.data);
+  }
+
+  creationDefaults(): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'GET',
+        path: '/v1/marketing/creation-defaults',
+      })
+      .then((r) => r.data);
+  }
+
+  patchStrategy(patch: Record<string, unknown>): Promise<unknown> {
+    return this.t.request({
+      method: 'PATCH',
+      path: '/v1/marketing/strategy',
+      body: { patch },
+    });
+  }
+
+  setCreationDefaults(body: Record<string, unknown>): Promise<unknown> {
+    return this.t.request({
+      method: 'PATCH',
+      path: '/v1/marketing/creation-defaults',
+      body,
+    });
+  }
+
+  createIcp(body: Record<string, unknown>): Promise<unknown> {
+    return this.t.request({ method: 'POST', path: '/v1/marketing/icps', body });
+  }
+
+  updateIcp(icpId: string, body: Record<string, unknown>): Promise<unknown> {
+    return this.t.request({
+      method: 'PATCH',
+      path: `/v1/marketing/icps/${encodeURIComponent(icpId)}`,
+      body,
+    });
+  }
+}
+
+class CreationsResource {
+  constructor(private readonly t: Transport) {}
+
+  list(opts: { status?: string; limit?: number } = {}): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/creations',
+        query: { status: opts.status, limit: opts.limit },
+      })
+      .then((r) => r.data);
+  }
+
+  get(creationId: string, opts: { detail?: 'summary' | 'full' } = {}): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'GET',
+        path: `/v1/creations/${encodeURIComponent(creationId)}`,
+        query: opts.detail === 'full' ? { detail: 'full' } : undefined,
+      })
+      .then((r) => r.data);
+  }
+
+  spawn(body: Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/creations',
+      body,
+      idempotencyKey: opts.idempotencyKey,
+    });
+  }
+
+  approveStrategy(creationId: string): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/creations/${encodeURIComponent(creationId)}/approve-strategy`,
+      body: {},
+    });
+  }
+}
+
+class ListsResource {
+  constructor(private readonly t: Transport) {}
+
+  list(): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({ method: 'GET', path: '/v1/lists' })
+      .then((r) => r.data);
+  }
+
+  get(listId: string): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'GET',
+        path: `/v1/lists/${encodeURIComponent(listId)}`,
+      })
+      .then((r) => r.data);
+  }
+
+  create(body: { name: string; description?: string; colorToken?: string }): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({ method: 'POST', path: '/v1/lists', body })
+      .then((r) => r.data);
+  }
+
+  update(listId: string, body: Record<string, unknown>): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'PATCH',
+        path: `/v1/lists/${encodeURIComponent(listId)}`,
+        body,
+      })
+      .then((r) => r.data);
+  }
+
+  delete(listId: string): Promise<unknown> {
+    return this.t.request({
+      method: 'DELETE',
+      path: `/v1/lists/${encodeURIComponent(listId)}`,
+    });
+  }
+
+  addMembers(listId: string, contactIds: string[]): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'POST',
+        path: `/v1/lists/${encodeURIComponent(listId)}/members`,
+        body: { contactIds },
+      })
+      .then((r) => r.data);
+  }
+
+  removeMembers(listId: string, contactIds: string[]): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'POST',
+        path: `/v1/lists/${encodeURIComponent(listId)}/members/remove`,
+        body: { contactIds },
+      })
+      .then((r) => r.data);
+  }
+}
+
+class ApprovalsResource {
+  constructor(private readonly t: Transport) {}
+
+  listPolicies(): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({ method: 'GET', path: '/v1/approvals/policies' })
+      .then((r) => r.data);
+  }
+
+  listPending(opts: { limit?: number } = {}): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/approvals/pending',
+        query: { limit: opts.limit },
+      })
+      .then((r) => r.data);
+  }
+
+  managePolicy(surfaceKind: string, body: Record<string, unknown>): Promise<unknown> {
+    return this.t.request({
+      method: 'PUT',
+      path: `/v1/approvals/policies/${encodeURIComponent(surfaceKind)}`,
+      body,
+    });
+  }
+
+  decide(
+    requestId: string,
+    body: {
+      decision: 'approve' | 'changes_requested' | 'reject';
+      actingAsMemberUid: string;
+      comment?: string;
+    },
+  ): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: `/v1/approvals/pending/${encodeURIComponent(requestId)}/decide`,
+      body,
+    });
+  }
+}
+
+class LinksResource {
+  constructor(private readonly t: Transport) {}
+
+  create(body: Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<unknown> {
+    return this.t
+      .request<{ data: unknown }>({
+        method: 'POST',
+        path: '/v1/links',
+        body,
+        idempotencyKey: opts.idempotencyKey,
+      })
+      .then((r) => r.data);
+  }
+}
+
+class TransactionalSocialResource {
+  constructor(private readonly t: Transport) {}
+
+  catalog(): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/social/transactional/catalog',
+      })
+      .then((r) => r.data);
+  }
+
+  listTemplates(): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/social/transactional/templates',
+      })
+      .then((r) => r.data);
+  }
+
+  preview(body: PreviewSocialEventRequest): Promise<unknown> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/social/transactional/preview',
+      body,
+    });
+  }
+
+  trigger(
+    body: TriggerSocialEventRequest,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<TriggerSocialEventResponse> {
+    return this.t.request({
+      method: 'POST',
+      path: '/v1/social/transactional/events',
+      body,
+      idempotencyKey: opts.idempotencyKey ?? body.idempotencyKey,
+    });
+  }
+
+  listEvents(opts: { eventKey?: string; limit?: number } = {}): Promise<unknown[]> {
+    return this.t
+      .request<ListEnvelope<unknown>>({
+        method: 'GET',
+        path: '/v1/social/transactional/events',
+        query: { eventKey: opts.eventKey, limit: opts.limit },
+      })
+      .then((r) => r.data);
   }
 }

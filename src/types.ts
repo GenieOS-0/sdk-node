@@ -23,9 +23,43 @@ export type ApiKeyScope =
   | 'stats:read'
   | 'brand:read'
   | 'connectors:read'
+  | 'pages:read'
+  | 'pages:write'
+  | 'pages:publish'
+  | 'messaging.transactional.read'
+  | 'messaging.transactional.send'
+  | 'social:transactional:read'
+  | 'social:transactional:trigger'
+  | 'social:transactional:publish'
+  | 'social:posts:read'
+  | 'social:posts:write'
+  | 'social:posts:publish'
+  | 'marketing:read'
+  | 'marketing:write'
+  | 'campaigns:read'
+  | 'campaigns:write'
+  | 'lists:read'
+  | 'lists:write'
+  | 'approvals:read'
+  | 'approvals:write'
+  | 'links:read'
+  | 'links:write'
   | 'webhooks:manage'
   | 'audit:read'
   | 'workspace:read';
+
+/** Social channel ids accepted by transactional + organic social APIs. */
+export type SocialChannelId =
+  | 'linkedin'
+  | 'x'
+  | 'instagram'
+  | 'facebook'
+  | 'tiktok'
+  | 'youtube'
+  | 'threads'
+  | 'bluesky'
+  | 'pinterest'
+  | string;
 
 /* ---------- Workspace ---------- */
 export interface Workspace {
@@ -192,7 +226,12 @@ export type WebhookEventName =
   | 'sequence_run.cancelled'
   | 'template.schema_proposed'
   | 'template.schema_ratified'
-  | 'template.published';
+  | 'template.published'
+  | 'social.post.created'
+  | 'social.post.scheduled'
+  | 'social.post.published'
+  | 'social.post.failed'
+  | 'social.post.deleted';
 
 export interface WebhookSubscription {
   id: string;
@@ -294,4 +333,165 @@ export interface PageDetail extends PageSummary {
   /** Section ids, top-to-bottom. The full block tree is intentionally not
    *  returned over the API (too large); read it in the SPA editor. */
   sectionIds: string[];
+}
+
+/* ---------- Transactional SMS (`/v1/messaging/transactional`) ---------- */
+export interface SmsTemplateView {
+  key: string;
+  name?: string;
+  bodyTemplate?: string;
+  [key: string]: unknown;
+}
+
+export interface SmsCatalogEntry {
+  key: string;
+  name?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+export interface PreviewSmsRequest {
+  templateKey: string;
+  bodyTemplate?: string;
+  variables?: Record<string, string | number | boolean>;
+}
+
+export interface PreviewSmsResponse {
+  body: string;
+  segmentCount?: number;
+  [key: string]: unknown;
+}
+
+export interface SendSmsRequest {
+  templateKey: string;
+  /** E.164 phone, e.g. `+447700900123`. */
+  to?: string;
+  recipientId?: string;
+  variables?: Record<string, string | number | boolean>;
+  idempotencyKey?: string;
+  consentProofId?: string;
+  allowExtraSegments?: boolean;
+}
+
+export interface SendSmsResponse {
+  deliveryId: string;
+  templateKey: string;
+  status: string;
+  [key: string]: unknown;
+}
+
+export interface SmsDelivery {
+  id?: string;
+  deliveryId?: string;
+  templateKey?: string;
+  status?: string;
+  to?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+/* ---------- Transactional Socials ---------- */
+export interface TriggerSocialEventRequest {
+  eventKey: string;
+  mode?: 'preview' | 'draft' | 'publish';
+  variables?: Record<string, unknown>;
+  channels?: SocialChannelId[];
+  idempotencyKey?: string;
+}
+
+export interface TriggerSocialEventResponse {
+  event: {
+    id?: string;
+    status: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+export interface PreviewSocialEventRequest {
+  eventKey: string;
+  variables?: Record<string, unknown>;
+  channels?: SocialChannelId[];
+}
+
+/* ---------- Organic social (`/v1/social/posts`, `/v1/social/networks`) ---------- */
+export type SocialPostStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'publishing'
+  | 'published'
+  | 'failed'
+  | 'deleted'
+  | string;
+
+export interface SocialNetwork {
+  channelId: SocialChannelId;
+  accountRef?: string;
+  displayName?: string;
+  handle?: string;
+  [key: string]: unknown;
+}
+
+export interface SocialPostMediaItem {
+  kind?: 'image' | 'video';
+  assetId?: string;
+  url?: string;
+  alt?: string;
+  thumbnailUrl?: string;
+}
+
+export interface SocialPost {
+  id: string;
+  status: SocialPostStatus;
+  channelId?: SocialChannelId;
+  caption?: string;
+  scheduledAt?: string | null;
+  publishedAt?: string | null;
+  groupId?: string;
+  [key: string]: unknown;
+}
+
+export interface CreateSocialPostRequest {
+  /** Default `copy`. Use `compose` + `brief` for Genie-written captions. */
+  mode?: 'copy' | 'compose';
+  name?: string;
+  brief?: string;
+  channels: SocialChannelId[];
+  caption?: string;
+  channelCaptions?: Partial<Record<SocialChannelId, string>>;
+  hashtags?: string[];
+  mentions?: string[];
+  media?: SocialPostMediaItem[];
+  linkUrl?: string;
+  firstComment?: string;
+  scheduleAt?: string;
+  publish?: boolean;
+  targetAccountRefs?: Partial<Record<SocialChannelId, string>>;
+  composer?: 'sonnet' | 'opus';
+  brandId?: string;
+  idempotencyKey?: string;
+}
+
+export interface CreateSocialPostResponse {
+  posts?: SocialPost[];
+  groupId?: string;
+  receipts?: { channelId?: string; ok: boolean; postId?: string; error?: string }[];
+  [key: string]: unknown;
+}
+
+export interface UpdateSocialPostRequest {
+  caption?: string;
+  hashtags?: string[];
+  media?: SocialPostMediaItem[];
+  linkUrl?: string | null;
+  firstComment?: string | null;
+}
+
+export interface ScheduleSocialPostRequest {
+  scheduledAt: string;
+  targetAccountRef?: string;
+}
+
+export interface PublishSocialPostRequest {
+  targetAccountRef?: string;
 }

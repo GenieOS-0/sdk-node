@@ -1,6 +1,6 @@
 {
   "name": "@genie-os/sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official TypeScript / Node.js SDK for the GenieOS API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
   "license": "Apache-2.0",
   "homepage": "https://docs.genieos.pro/sdks/node",

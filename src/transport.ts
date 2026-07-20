@@ -6,7 +6,7 @@
  *   - Bearer auth header injection.
  *   - Idempotency-Key auto-generation for mutating verbs (POST/PATCH/PUT/DELETE)
  *     unless the caller passes one explicitly. Generated keys are
- *     `mgi_<base36-millis><base36-random>` so they're easy to grep
+ *     `gos_<base36-millis>_<base36-random>` so they're easy to grep
  *     in customer logs.
  *   - Exponential-backoff retries for network failures and 5xx /
  *     429 responses, honouring `Retry-After` when present.
@@ -212,7 +212,7 @@ export function generateIdempotencyKey(): string {
   const rand = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-  return `mgi_${t}_${rand}`;
+  return `gos_${t}_${rand}`;
 }
 
 function buildError(

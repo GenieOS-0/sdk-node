@@ -9,11 +9,15 @@
  * Usage (Express):
  *
  *   import express from 'express';
- *   import { verifyWebhook } from 'genieos/webhooks';
+ *   import { verifyWebhook } from '@genie-os/sdk/webhooks';
  *
- *   app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) => {
+ *   app.post('/genieos/webhook', express.raw({ type: 'application/json' }), (req, res) => {
  *     try {
- *       const event = verifyWebhook(req.body.toString('utf8'), req.headers, process.env.MG_WEBHOOK_SECRET!);
+ *       const event = verifyWebhook(
+ *         req.body.toString('utf8'),
+ *         req.headers,
+ *         process.env.GENIEOS_WEBHOOK_SECRET!,
+ *       );
  *       // event is the parsed envelope: { id, event, workspaceId, occurredAt, data }
  *       // ... your handler
  *       res.json({ ok: true });
