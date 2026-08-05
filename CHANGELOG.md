@@ -1,5 +1,11 @@
 # @genie-os/sdk
 
+## 0.1.3
+
+- Typed `links.create` body (`CreateShortLinkRequest`) including optional
+  `utm` (`source` / `medium` / `campaign` / `content` / `term`), `tags`,
+  and `domain`. UTMs are stamped onto the redirect at click time.
+
 ## 0.1.2
 
 - Template create + compose (`templates.create`, `templates.compose`).

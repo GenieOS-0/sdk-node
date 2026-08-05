@@ -495,3 +495,36 @@ export interface ScheduleSocialPostRequest {
 export interface PublishSocialPostRequest {
   targetAccountRef?: string;
 }
+
+/* ---------- Short links ---------- */
+/** UTM tagging stamped onto the redirect destination at click time. */
+export interface ShortLinkUtm {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  term?: string;
+}
+
+export interface CreateShortLinkRequest {
+  destinationUrl: string;
+  slug?: string;
+  label?: string;
+  tags?: string[];
+  folderId?: string;
+  utm?: ShortLinkUtm;
+  campaignId?: string;
+  domain?: string;
+}
+
+export interface CreateShortLinkResponse {
+  linkId: string;
+  workspaceId: string;
+  domain: string;
+  slug: string;
+  redirectUrl: string;
+  destinationUrl: string;
+  totalClicks: number;
+  uniqueClicks: number;
+  remainingCredits: number;
+}

@@ -35,6 +35,8 @@ import type {
   AuditEvent,
   BrandDetail,
   BrandSummary,
+  CreateShortLinkRequest,
+  CreateShortLinkResponse,
   CreateSocialPostRequest,
   CreateSocialPostResponse,
   CreateWebhookRequest,
@@ -859,9 +861,12 @@ class ApprovalsResource {
 class LinksResource {
   constructor(private readonly t: Transport) {}
 
-  create(body: Record<string, unknown>, opts: { idempotencyKey?: string } = {}): Promise<unknown> {
+  create(
+    body: CreateShortLinkRequest,
+    opts: { idempotencyKey?: string } = {},
+  ): Promise<CreateShortLinkResponse> {
     return this.t
-      .request<{ data: unknown }>({
+      .request<{ data: CreateShortLinkResponse }>({
         method: 'POST',
         path: '/v1/links',
         body,
