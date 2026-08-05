@@ -1,5 +1,10 @@
 # @genie-os/sdk
 
+## 0.1.4
+
+- `links.list()` and `links.utmSuggestions()` — read prior short links and
+  frequency-ranked UTM values before create.
+
 ## 0.1.3
 
 - Typed `links.create` body (`CreateShortLinkRequest`) including optional

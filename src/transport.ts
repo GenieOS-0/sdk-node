@@ -68,7 +68,7 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
-const SDK_VERSION = '0.1.3';
+const SDK_VERSION = '0.1.4';
 const DEFAULT_BASE = 'https://api.genieos.pro';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 

@@ -528,3 +528,40 @@ export interface CreateShortLinkResponse {
   uniqueClicks: number;
   remainingCredits: number;
 }
+
+export interface ShortLinkSummary {
+  linkId: string;
+  domain: string;
+  slug: string;
+  redirectUrl: string;
+  destinationUrl: string;
+  label?: string;
+  tags: string[];
+  utm?: ShortLinkUtm;
+  campaignId?: string;
+  totalClicks: number;
+  uniqueClicks: number;
+  archived: boolean;
+  createdAt: string | null;
+}
+
+export type UtmFieldKey = keyof ShortLinkUtm;
+
+export interface UtmSuggestions {
+  source: string[];
+  medium: string[];
+  campaign: string[];
+  content: string[];
+  term: string[];
+}
+
+export type UtmSuggestionCounts = Record<
+  UtmFieldKey,
+  Array<{ value: string; count: number }>
+>;
+
+export interface ListUtmSuggestionsResponse {
+  suggestions: UtmSuggestions;
+  counts?: UtmSuggestionCounts;
+  scannedLinks: number;
+}

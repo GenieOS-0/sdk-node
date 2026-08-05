@@ -21,7 +21,7 @@
  *   gos.creations.{list, get, spawn, approveStrategy}
  *   gos.lists.{list, get, create, update, delete, addMembers, removeMembers}
  *   gos.approvals.{listPolicies, listPending, managePolicy, decide}
- *   gos.links.create()
+ *   gos.links.{list, utmSuggestions, create}()
  *   gos.pages.{list, get, compose, publish, unpublish}
  *
  * The client itself is a thin façade over `Transport`. All retries,
@@ -37,6 +37,8 @@ import type {
   BrandSummary,
   CreateShortLinkRequest,
   CreateShortLinkResponse,
+  ListUtmSuggestionsResponse,
+  ShortLinkSummary,
   CreateSocialPostRequest,
   CreateSocialPostResponse,
   CreateWebhookRequest,
@@ -860,6 +862,39 @@ class ApprovalsResource {
 
 class LinksResource {
   constructor(private readonly t: Transport) {}
+
+  list(
+    opts: { includeArchived?: boolean; limit?: number } = {},
+  ): Promise<ShortLinkSummary[]> {
+    return this.t
+      .request<{ data: ShortLinkSummary[] }>({
+        method: 'GET',
+        path: '/v1/links',
+        query: {
+          includeArchived: opts.includeArchived ? 'true' : undefined,
+          limit: opts.limit,
+        },
+      })
+      .then((r) => r.data);
+  }
+
+  utmSuggestions(
+    opts: {
+      field?: 'source' | 'medium' | 'campaign' | 'content' | 'term';
+      includeCounts?: boolean;
+    } = {},
+  ): Promise<ListUtmSuggestionsResponse> {
+    return this.t
+      .request<{ data: ListUtmSuggestionsResponse }>({
+        method: 'GET',
+        path: '/v1/links/utm-suggestions',
+        query: {
+          field: opts.field,
+          includeCounts: opts.includeCounts === false ? 'false' : undefined,
+        },
+      })
+      .then((r) => r.data);
+  }
 
   create(
     body: CreateShortLinkRequest,
