@@ -6,30 +6,30 @@
  *   - Bearer auth header injection.
  *   - Idempotency-Key auto-generation for mutating verbs (POST/PATCH/PUT/DELETE)
  *     unless the caller passes one explicitly. Generated keys are
- *     `mgi_<base36-millis><base36-random>` so they're easy to grep
+ *     `gos_<base36-millis>_<base36-random>` so they're easy to grep
  *     in customer logs.
  *   - Exponential-backoff retries for network failures and 5xx /
  *     429 responses, honouring `Retry-After` when present.
  *   - Typed error parsing — any non-2xx response is thrown as a
- *     subclass of `MailGeniusError`.
+ *     subclass of `GenieOSError`.
  *   - User-Agent stamping (helps server-side support triage).
  *   - Request fingerprinting via `requestId` echoed in errors.
  *
  * Designed for native `fetch` (Node ≥ 18). No runtime deps.
  */
 import {
-  MailGeniusAuthError,
-  MailGeniusError,
-  MailGeniusIdempotencyConflictError,
-  MailGeniusNetworkError,
-  MailGeniusRateLimitError,
-  MailGeniusValidationError,
-  type MailGeniusErrorBody,
+  GenieOSAuthError,
+  GenieOSError,
+  GenieOSIdempotencyConflictError,
+  GenieOSNetworkError,
+  GenieOSRateLimitError,
+  GenieOSValidationError,
+  type GenieOSErrorBody,
 } from './errors.js';
 
 export interface TransportOptions {
   /**
-   * API key — either `mg_live_*` (production), `mg_test_*` (sandbox), or
+   * API key — either `gos_live_*` (production), `gos_test_*` (sandbox), or
    * the legacy `mfk_live_*` shape. Treated opaquely.
    */
   apiKey: string;
@@ -68,7 +68,7 @@ export interface RequestOptions {
   signal?: AbortSignal;
 }
 
-const SDK_VERSION = '0.1.0';
+const SDK_VERSION = '0.1.5';
 const DEFAULT_BASE = 'https://api.genieos.pro';
 const RETRYABLE_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
@@ -94,7 +94,7 @@ export class Transport {
     const tag = opts.appName
       ? `${opts.appName}${opts.appVersion ? `/${opts.appVersion}` : ''}`
       : '';
-    this.userAgent = `mailgenius-node/${SDK_VERSION}${tag ? ' ' + tag : ''}`;
+    this.userAgent = `genieos-node/${SDK_VERSION}${tag ? ' ' + tag : ''}`;
   }
 
   async request<T>(opts: RequestOptions): Promise<T> {
@@ -145,10 +145,10 @@ export class Transport {
       } catch (e) {
         clearTimeout(timer);
         // Already a typed error → either re-throw or retry handled above.
-        if (e instanceof MailGeniusError) throw e;
+        if (e instanceof GenieOSError) throw e;
         // Network / abort.
         const isAbort = (e as { name?: string }).name === 'AbortError';
-        const wrapped = new MailGeniusNetworkError(
+        const wrapped = new GenieOSNetworkError(
           isAbort ? `Request timed out after ${timeoutMs}ms` : `Network error: ${(e as Error).message}`,
           e,
         );
@@ -212,34 +212,34 @@ export function generateIdempotencyKey(): string {
   const rand = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-  return `mgi_${t}_${rand}`;
+  return `gos_${t}_${rand}`;
 }
 
 function buildError(
   status: number,
-  body: MailGeniusErrorBody,
+  body: GenieOSErrorBody,
   requestId: string | undefined,
   headers: Headers,
-): MailGeniusError {
+): GenieOSError {
   const ctx = { status, code: body.code, message: body.message, type: body.type, requestId, context: body.context };
-  if (status === 401 || status === 403) return new MailGeniusAuthError(ctx);
+  if (status === 401 || status === 403) return new GenieOSAuthError(ctx);
   if (status === 409 && body.code === 'idempotency_conflict') {
-    return new MailGeniusIdempotencyConflictError(ctx);
+    return new GenieOSIdempotencyConflictError(ctx);
   }
-  if (status === 422 || status === 400) return new MailGeniusValidationError(ctx);
+  if (status === 422 || status === 400) return new GenieOSValidationError(ctx);
   if (status === 429) {
     const ra = headers.get('retry-after');
-    return new MailGeniusRateLimitError({
+    return new GenieOSRateLimitError({
       ...ctx,
       retryAfterSec: ra ? Number(ra) : undefined,
     });
   }
-  return new MailGeniusError(ctx);
+  return new GenieOSError(ctx);
 }
 
-async function parseErrorBody(res: Response): Promise<MailGeniusErrorBody> {
+async function parseErrorBody(res: Response): Promise<GenieOSErrorBody> {
   try {
-    const json = (await res.json()) as { error?: MailGeniusErrorBody };
+    const json = (await res.json()) as { error?: GenieOSErrorBody };
     if (json.error) return json.error;
   } catch {
     // fall through

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { GenieOS, MailGeniusAuthError, MailGeniusRateLimitError } from '../src/index.js';
+import { GenieOS, GenieOSAuthError, GenieOSRateLimitError } from '../src/index.js';
 
 function fakeFetch(handler: (req: Request) => Response | Promise<Response>): typeof fetch {
   return async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -11,8 +11,8 @@ function fakeFetch(handler: (req: Request) => Response | Promise<Response>): typ
 
 test('templates.send injects bearer auth + idempotency-key + body', async () => {
   let observed: { authorization: string | null; idempotency: string | null; body: string } | null = null;
-  const mg = new GenieOS({
-    apiKey: 'mg_live_unit_test',
+  const gos = new GenieOS({
+    apiKey: 'gos_live_unit_test',
     fetch: fakeFetch(async (req) => {
       observed = {
         authorization: req.headers.get('authorization'),
@@ -26,21 +26,21 @@ test('templates.send injects bearer auth + idempotency-key + body', async () => 
     }),
   });
 
-  const res = await mg.templates.send('hello.world', {
+  const res = await gos.templates.send('hello.world', {
     to: 'fan@example.com',
     variables: { firstName: 'Aki' },
   });
   assert.equal(res.id, 'snd_1');
   assert.ok(observed);
-  assert.equal(observed!.authorization, 'Bearer mg_live_unit_test');
-  assert.match(observed!.idempotency!, /^mgi_/);
+  assert.equal(observed!.authorization, 'Bearer gos_live_unit_test');
+  assert.match(observed!.idempotency!, /^gos_/);
   assert.match(observed!.body, /firstName/);
 });
 
 test('429 with retry-after backs off then succeeds', async () => {
   let calls = 0;
-  const mg = new GenieOS({
-    apiKey: 'mg_live_unit',
+  const gos = new GenieOS({
+    apiKey: 'gos_live_unit',
     initialBackoffMs: 5,
     fetch: fakeFetch(async () => {
       calls += 1;
@@ -56,14 +56,14 @@ test('429 with retry-after backs off then succeeds', async () => {
       );
     }),
   });
-  const res = await mg.events.emit({ name: 'unit.test' });
+  const res = await gos.events.emit({ name: 'unit.test' });
   assert.equal(res.eventId, 'evt_1');
   assert.equal(calls, 2);
 });
 
-test('401 throws MailGeniusAuthError', async () => {
-  const mg = new GenieOS({
-    apiKey: 'mg_live_invalid',
+test('401 throws GenieOSAuthError', async () => {
+  const gos = new GenieOS({
+    apiKey: 'gos_live_invalid',
     maxRetries: 0,
     fetch: fakeFetch(
       async () =>
@@ -73,12 +73,12 @@ test('401 throws MailGeniusAuthError', async () => {
         ),
     ),
   });
-  await assert.rejects(mg.workspace.get(), (e: unknown) => e instanceof MailGeniusAuthError);
+  await assert.rejects(gos.workspace.get(), (e: unknown) => e instanceof GenieOSAuthError);
 });
 
-test('429 with exhausted retries throws MailGeniusRateLimitError', async () => {
-  const mg = new GenieOS({
-    apiKey: 'mg_live_x',
+test('429 with exhausted retries throws GenieOSRateLimitError', async () => {
+  const gos = new GenieOS({
+    apiKey: 'gos_live_x',
     maxRetries: 1,
     initialBackoffMs: 1,
     fetch: fakeFetch(
@@ -89,5 +89,5 @@ test('429 with exhausted retries throws MailGeniusRateLimitError', async () => {
         ),
     ),
   });
-  await assert.rejects(mg.events.emit({ name: 'x' }), (e: unknown) => e instanceof MailGeniusRateLimitError);
+  await assert.rejects(gos.events.emit({ name: 'x' }), (e: unknown) => e instanceof GenieOSRateLimitError);
 });

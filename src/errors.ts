@@ -6,13 +6,13 @@
  *
  *   { error: { type, code, message, context? } }
  *
- * The transport throws a `MailGeniusError` (or one of its subclasses)
+ * The transport throws a `GenieOSError` (or one of its subclasses)
  * for any non-2xx response. Network failures and timeouts surface as
- * `MailGeniusNetworkError` so callers can distinguish "the server told
+ * `GenieOSNetworkError` so callers can distinguish "the server told
  * me no" from "I never reached the server".
  */
 
-export type MailGeniusErrorType =
+export type GenieOSErrorType =
   | 'authentication_error'
   | 'permission_denied'
   | 'invalid_request_error'
@@ -22,15 +22,15 @@ export type MailGeniusErrorType =
   | 'api_error'
   | 'network_error';
 
-export interface MailGeniusErrorBody {
+export interface GenieOSErrorBody {
   type: string;
   code: string;
   message: string;
   context?: Record<string, unknown>;
 }
 
-export class MailGeniusError extends Error {
-  readonly type: MailGeniusErrorType | string;
+export class GenieOSError extends Error {
+  readonly type: GenieOSErrorType | string;
   readonly code: string;
   readonly status: number;
   readonly requestId?: string;
@@ -45,7 +45,7 @@ export class MailGeniusError extends Error {
     context?: Record<string, unknown>;
   }) {
     super(opts.message);
-    this.name = 'MailGeniusError';
+    this.name = 'GenieOSError';
     this.type = opts.type;
     this.code = opts.code;
     this.status = opts.status;
@@ -54,41 +54,41 @@ export class MailGeniusError extends Error {
   }
 }
 
-export class MailGeniusAuthError extends MailGeniusError {
-  constructor(opts: ConstructorParameters<typeof MailGeniusError>[0]) {
+export class GenieOSAuthError extends GenieOSError {
+  constructor(opts: ConstructorParameters<typeof GenieOSError>[0]) {
     super(opts);
-    this.name = 'MailGeniusAuthError';
+    this.name = 'GenieOSAuthError';
   }
 }
 
-export class MailGeniusRateLimitError extends MailGeniusError {
+export class GenieOSRateLimitError extends GenieOSError {
   readonly retryAfterSec?: number;
-  constructor(opts: ConstructorParameters<typeof MailGeniusError>[0] & { retryAfterSec?: number }) {
+  constructor(opts: ConstructorParameters<typeof GenieOSError>[0] & { retryAfterSec?: number }) {
     super(opts);
-    this.name = 'MailGeniusRateLimitError';
+    this.name = 'GenieOSRateLimitError';
     this.retryAfterSec = opts.retryAfterSec;
   }
 }
 
-export class MailGeniusValidationError extends MailGeniusError {
-  constructor(opts: ConstructorParameters<typeof MailGeniusError>[0]) {
+export class GenieOSValidationError extends GenieOSError {
+  constructor(opts: ConstructorParameters<typeof GenieOSError>[0]) {
     super(opts);
-    this.name = 'MailGeniusValidationError';
+    this.name = 'GenieOSValidationError';
   }
 }
 
-export class MailGeniusIdempotencyConflictError extends MailGeniusError {
-  constructor(opts: ConstructorParameters<typeof MailGeniusError>[0]) {
+export class GenieOSIdempotencyConflictError extends GenieOSError {
+  constructor(opts: ConstructorParameters<typeof GenieOSError>[0]) {
     super(opts);
-    this.name = 'MailGeniusIdempotencyConflictError';
+    this.name = 'GenieOSIdempotencyConflictError';
   }
 }
 
-export class MailGeniusNetworkError extends Error {
+export class GenieOSNetworkError extends Error {
   readonly cause?: unknown;
   constructor(message: string, cause?: unknown) {
     super(message);
-    this.name = 'MailGeniusNetworkError';
+    this.name = 'GenieOSNetworkError';
     this.cause = cause;
   }
 }

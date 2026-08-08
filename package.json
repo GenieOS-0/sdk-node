@@ -1,15 +1,15 @@
 {
-  "name": "genieos",
-  "version": "0.1.0",
+  "name": "@genie-os/sdk",
+  "version": "0.1.5",
   "description": "Official TypeScript / Node.js SDK for the GenieOS API. Templates, sequences, events, webhooks, schema-contract — typed, retried, idempotent.",
   "license": "Apache-2.0",
   "homepage": "https://docs.genieos.pro/sdks/node",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mail-genie/sdk-node.git"
+    "url": "git+https://github.com/GenieOS-0/sdk-node.git"
   },
   "bugs": {
-    "url": "https://github.com/mail-genie/sdk-node/issues"
+    "url": "https://github.com/GenieOS-0/sdk-node/issues"
   },
   "keywords": [
     "genieos",
@@ -22,17 +22,17 @@
   ],
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
+      "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
     "./webhooks": {
       "types": "./dist/webhooks.d.ts",
-      "import": "./dist/webhooks.mjs",
+      "import": "./dist/webhooks.js",
       "require": "./dist/webhooks.cjs"
     }
   },
@@ -47,7 +47,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts src/webhooks.ts --format esm,cjs --dts --clean --target node18",
-    "test": "node --test --import tsx ./test/**/*.test.ts",
+    "test": "node --test --import tsx test/*.test.ts",
     "lint": "eslint src --ext .ts",
     "prepublishOnly": "npm run build"
   },

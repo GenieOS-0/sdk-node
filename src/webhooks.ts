@@ -4,16 +4,20 @@
  * Mirrors the signing scheme implemented server-side in
  * `functions/src/lib/webhookDelivery.ts`:
  *
- *   X-MailGenius-Signature: t=<unix-seconds>,v1=<hex(hmac-sha256(secret, t.body))>
+ *   X-GenieOS-Signature: t=<unix-seconds>,v1=<hex(hmac-sha256(secret, t.body))>
  *
  * Usage (Express):
  *
  *   import express from 'express';
- *   import { verifyWebhook } from 'genieos/webhooks';
+ *   import { verifyWebhook } from '@genie-os/sdk/webhooks';
  *
- *   app.post('/mg-webhook', express.raw({ type: 'application/json' }), (req, res) => {
+ *   app.post('/genieos/webhook', express.raw({ type: 'application/json' }), (req, res) => {
  *     try {
- *       const event = verifyWebhook(req.body.toString('utf8'), req.headers, process.env.MG_WEBHOOK_SECRET!);
+ *       const event = verifyWebhook(
+ *         req.body.toString('utf8'),
+ *         req.headers,
+ *         process.env.GENIEOS_WEBHOOK_SECRET!,
+ *       );
  *       // event is the parsed envelope: { id, event, workspaceId, occurredAt, data }
  *       // ... your handler
  *       res.json({ ok: true });
@@ -67,15 +71,15 @@ export function verifyWebhook<TData = unknown>(
   if (!secret) {
     throw new WebhookVerificationError('bad_signature', 'Verifier secret not provided.');
   }
-  const sigHeader = pickHeader(headers, 'x-mailgenius-signature');
+  const sigHeader = pickHeader(headers, 'x-genieos-signature');
   if (!sigHeader) {
-    throw new WebhookVerificationError('missing_signature', 'X-MailGenius-Signature header is missing.');
+    throw new WebhookVerificationError('missing_signature', 'X-GenieOS-Signature header is missing.');
   }
   const parts = parseSigHeader(sigHeader);
   if (!parts) {
     throw new WebhookVerificationError(
       'malformed_signature',
-      'X-MailGenius-Signature is malformed; expected "t=<seconds>,v1=<hex>".',
+      'X-GenieOS-Signature is malformed; expected "t=<seconds>,v1=<hex>".',
     );
   }
   const tolerance = opts.toleranceSec ?? 300;
